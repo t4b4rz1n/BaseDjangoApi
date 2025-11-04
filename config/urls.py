@@ -8,9 +8,9 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="Ali Fathi API",
+      title="Base Project API",
       default_version='v1',
-      description="API documentation for Ali Fathi"
+      description="API documentation for Base Project"
    ),
    public=True,
    permission_classes=[permissions.AllowAny],
