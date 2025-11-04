@@ -259,13 +259,8 @@ poetry.toml
 
 # ruff
 .ruff_cache/
-.postgres_data/
-.minio_data/
-
-.postgres_data
-.minio_data
-
-# LSP config files
+postgres_data/
+minio_data/
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,django

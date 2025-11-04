@@ -89,11 +89,11 @@ services:
     networks:
       - base-network
 
-  web:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: base_project_web
+    container_name: base_project_backend
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
