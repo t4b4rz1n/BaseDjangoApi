@@ -1,11 +1,17 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-# load_dotenv(BASE_DIR / ".env")
-SECRET_KEY = os.environ.get("SECRET_KEY")
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+
+# --- Load .env file if it exists ---
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-CHANGE-ME-IN-PRODUCTION")
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 ENABLE_FIELD_FILTER_PAGINATION = os.environ.get("ENABLE_FIELD_FILTER_PAGINATION", "False")
 ALLOWED_HOSTS_str = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = ALLOWED_HOSTS_str.split(",")
@@ -77,17 +83,27 @@ WSGI_APPLICATION = "config.wsgi.application"
 # --- Custom User Model ---
 AUTH_USER_MODEL = "accounts.User"
 
-# --- Database Configuration (PostgreSQL) ---
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get('DB_NAME'),
-        "USER": os.environ.get("DB_USER"),
-        "PASSWORD": os.environ.get("DB_PASSWORD"),
-        "HOST": os.environ.get("DB_HOST"),
-        "PORT": os.environ.get("DB_PORT"),
+# --- Database Configuration ---
+USE_SQLITE = os.environ.get("USE_SQLITE", "False") == "True"
+
+if USE_SQLITE:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get('DB_NAME', 'base_project_db'),
+            "USER": os.environ.get("DB_USER", 'base_project_user'),
+            "PASSWORD": os.environ.get("DB_PASSWORD", 'strong_password_123'),
+            "HOST": os.environ.get("DB_HOST", 'localhost'),
+            "PORT": os.environ.get("DB_PORT", '5432'),
+        }
+    }
 
 # --- Password Validation ---
 AUTH_PASSWORD_VALIDATORS = [
@@ -174,6 +190,15 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
 }
 
+# --- SimpleJWT Settings ---
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.environ.get("JWT_ACCESS_LIFETIME_MINUTES", "60"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get("JWT_REFRESH_LIFETIME_DAYS", "7"))),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
+
+# --- Payment Settings ---
 NOWPAYMENTS_API_KEY = os.environ.get("NOWPAYMENTS_API_KEY")
 NOWPAYMENTS_SANDBOX_API_KEY = os.environ.get("NOWPAYMENTS_SANDBOX_API_KEY")
 
@@ -181,6 +206,7 @@ ZARINPAL_MERCHANT_ID = os.environ.get("ZARINPAL_MERCHANT_ID")
 CALLBACK_URL = os.environ.get("CALLBACK_URL", "https://example.com/payment/verify/")
 CANCEL_URL = os.environ.get("CANCEL_URL", "https://example.com/payment/cancel/")
 
+# --- Logging ---
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 LOGGING = {

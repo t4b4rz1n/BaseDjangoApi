@@ -19,6 +19,7 @@ RUN pip install --upgrade pip --no-cache-dir
 COPY requirements.txt .
 RUN pip install -r requirements.txt --no-cache-dir
 
+# Build-time env vars (safe defaults for collectstatic during build)
 ENV SECRET_KEY='build-time-fake-key'
 ENV DEBUG='False'
 ENV DB_HOST='build-time-fake-db-host'
@@ -27,7 +28,15 @@ ENV DB_USER='fake'
 ENV DB_PASSWORD='fake'
 ENV DB_PORT='1234'
 ENV USE_MINIO='False'
+ENV USE_SQLITE='False'
+
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
 
 COPY . .
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000

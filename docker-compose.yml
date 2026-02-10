@@ -1,53 +1,18 @@
-version: '3.9'
-
-x-environment: &shared-environment
-  SECRET_KEY: 'django-insecure-your-own-super-secret-key-CHANGE-ME'
-  DEBUG: 'True'
-  ALLOWED_HOSTS: 'localhost,127.0.0.1,0.0.0.0'
-  CSRF_TRUSTED_ORIGINS: 'http://localhost,http://127.0.0.1'
-  ALLOWED_CORS: 'http://localhost:3000,http://127.0.0.1:3000'
-  DB_NAME: 'base_project_db'
-  DB_USER: 'base_project_user'
-  DB_PASSWORD: 'strong_password_123'
-  DB_HOST: 'db_postgres'
-  DB_PORT: '5432'
-  USE_MINIO: 'True'
-  AWS_ACCESS_KEY_ID: 'minio_admin'
-  AWS_SECRET_ACCESS_KEY: 'minio_password'
-  AWS_STORAGE_BUCKET_NAME: 'base-project-media'
-  AWS_S3_ENDPOINT_URL: 'http://minio:9000'
-  AWS_S3_MINAIO_ENDPOINT_URL: 'http://localhost:9000'
-  AWS_S3_USE_SSL: 'False'
-  AWS_QUERYSTRING_AUTH: 'True'
-  AWS_S3_CUSTOM_DOMAIN: 'localhost:9000/base-project-media'
-  AWS_S3_URL_PROTOCOL: 'http:'
-  AWS_DEFAULT_ACL: 'private'
-  AWS_S3_OBJECT_PARAMETERS: "{\"CacheControl\": \"max-age=86400\"}"
-  SUPERUSER_USERNAME: 'admin'
-  SUPERUSER_EMAIL: 'admin@example.com'
-  SUPERUSER_PASSWORD: 'adminpass123'
-  DJANGO_SUPERUSER_PASSWORD: 'adminpass123'
-  NOWPAYMENTS_API_KEY: 'nowpayments-api-key'
-  NOWPAYMENTS_SANDBOX_API_KEY: 'nowpayments-sandbox-api-key'
-  ZARINPAL_MERCHANT_ID: 'zarinpal-merchant-id'
-  CALLBACK_URL: 'https://example.com/payment/verify/'
-  CANCEL_URL: 'https://example.com/payment/cancel/'
-  ENABLE_FIELD_FILTER_PAGINATION: 'False'
-
 services:
   db_postgres:
     image: postgres:16-alpine
     container_name: base_project_db
+    env_file: .env
     environment:
-      POSTGRES_DB: 'base_project_db'
-      POSTGRES_USER: 'base_project_user'
-      POSTGRES_PASSWORD: 'strong_password_123'
+      POSTGRES_DB: ${DB_NAME:-base_project_db}
+      POSTGRES_USER: ${DB_USER:-base_project_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-strong_password_123}
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -U base_project_user -d base_project_db"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${DB_USER:-base_project_user} -d ${DB_NAME:-base_project_db}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -59,8 +24,8 @@ services:
     image: minio/minio:latest
     container_name: base_project_minio
     environment:
-      MINIO_ROOT_USER: 'minio_admin'
-      MINIO_ROOT_PASSWORD: 'minio_password'
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minio_password}
     command: server --console-address ":9001" /data
     ports:
       - "9000:9000"
@@ -75,6 +40,8 @@ services:
     restart: unless-stopped
     networks:
       - base-network
+    profiles:
+      - minio
 
   setup-minio:
     build: .
@@ -82,35 +49,45 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    environment:
-      <<: *shared-environment
+    env_file: .env
     command: python scripts/setup-minio.py
     volumes:
       - .:/app
     networks:
       - base-network
+    profiles:
+      - minio
+
+  redis:
+    image: redis:7-alpine
+    container_name: base_project_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - base-network
+    profiles:
+      - redis
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: base_project_backend
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             python manage.py createsuperuser --noinput --username $SUPERUSER_USERNAME --email $SUPERUSER_EMAIL || true &&
-             python manage.py runserver 0.0.0.0:8000"
+    command: sh scripts/entrypoint.sh
     volumes:
       - .:/app
     ports:
       - "8000:8000"
-    environment:
-      <<: *shared-environment
+    env_file: .env
     depends_on:
       db_postgres:
         condition: service_healthy
-      setup-minio:
-        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - base-network

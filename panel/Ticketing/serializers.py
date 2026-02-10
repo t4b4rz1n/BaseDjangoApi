@@ -19,7 +19,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
         VIDEO_EXTS = ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv']
         AUDIO_EXTS = ['.mp3', '.wav', '.ogg', '.m4a']
         DOC_EXTS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv']
-        ARCHIVE_EXTS = ['.zip', 'rar', '.7z', '.tar', '.gz']
+        ARCHIVE_EXTS = ['.zip', '.rar', '.7z', '.tar', '.gz']
         if ext in IMAGE_EXTS: return "image"
         if ext in VIDEO_EXTS: return "video"
         if ext in AUDIO_EXTS: return "audio"

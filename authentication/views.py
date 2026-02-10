@@ -16,9 +16,8 @@ class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserRegisterSerializer
 
 
-from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import login
-from .serializers import MyTokenObtainPairSerializer  # assuming your custom serializer
+
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
