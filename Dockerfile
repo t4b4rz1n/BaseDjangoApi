@@ -16,8 +16,8 @@ ENV PYTHONPATH=/app
 WORKDIR /app
 
 RUN pip install --upgrade pip --no-cache-dir
-COPY requirements.txt .
-RUN pip install -r requirements.txt --no-cache-dir
+COPY requirements/ ./requirements/
+RUN pip install -r requirements/prod.txt --no-cache-dir
 
 # Build-time env vars (safe defaults for collectstatic during build)
 ENV SECRET_KEY='build-time-fake-key'

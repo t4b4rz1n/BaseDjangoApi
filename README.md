@@ -117,10 +117,23 @@ See [`.env.example`](.env.example) for all available configuration options. Key 
 
 - **Custom User Model** — `accounts.User` extends `AbstractUser` with profile image
 - **BaseModel** — All models use UUID primary keys + `created_at`/`updated_at` timestamps
-- **ApiRenderer** — Consistent JSON response format: `{status, message, data}`
+- **ApiRenderer** — Consistent JSON response format: `{status, message, data, errors}`
 - **DefaultPagination** — Rich pagination with `total_pages`, `has_next`, `current_page`, etc.
 - **Panel vs Dashboard** — Admin APIs in `panel/`, user-facing APIs in `dashboard/`
 
+## 🧪 Testing
+
+This project comes with a comprehensive test suite covering authentication, user profiles, ticketing, and billing configurations.
+
+To run the automated tests locally:
+```bash
+USE_SQLITE=True python manage.py test
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please check out our [Contributing Guidelines](CONTRIBUTING.md) to learn how you can help improve this boilerplate.
+
 ## 📝 License
 
-This project is private and proprietary.
+This project is licensed under the **MIT License** — feel free to use and customize it for your personal or commercial applications. See the [LICENSE](LICENSE) file for details.

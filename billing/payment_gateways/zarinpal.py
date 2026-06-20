@@ -1,4 +1,5 @@
 import json
+
 import requests
 from django.conf import settings
 from django.utils.translation import gettext as _
@@ -40,13 +41,13 @@ else:
     ZP_API_VERIFY = "https://api.zarinpal.com/pg/v4/payment/verify.json"
     ZP_API_STARTPAY = "https://api.zarinpal.com/pg/StartPay/"
 
+
 class ZarinpalClient:
     MERCHANT_ID = settings.ZARINPAL_MERCHANT_ID
     CALLBACK_URL = settings.CALLBACK_URL
 
     @classmethod
     def pay(cls, amount, description, email="ali.fathi.13121110@gmail.com", mobile="993123456789"):
-
         data = {
             "merchant_id": cls.MERCHANT_ID,
             "amount": amount,
@@ -55,58 +56,55 @@ class ZarinpalClient:
             "currency": "IRT",
             # "metadata": {"email": email, "mobile": str(mobile) if mobile else ""},
         }
-        
+
         print(data)
         data_json = json.dumps(data)
-        headers = {
-            'content-type': 'application/json',
-            'content-length': str(len(data_json))
-        }
+        headers = {"content-type": "application/json", "content-length": str(len(data_json))}
         try:
             response = requests.post(ZP_API_REQUEST, data=data_json, headers=headers, timeout=10)
             json_response = response.json()
             if json_response.get("data"):
                 authority = str(json_response["data"]["authority"])
                 url = ZP_API_STARTPAY + authority
-                return {'status': True, 'url': url, 'authority': authority}
+                return {"status": True, "url": url, "authority": authority}
             else:
                 error_code = json_response.get("errors", {}).get("code", None)
-                return {'status': False, 'code': error_code}
+                return {"status": False, "code": error_code}
         except requests.exceptions.Timeout:
-            return {'status': None, 'code': 502, 'detail': _("Connection timed out")}
+            return {"status": None, "code": 502, "detail": _("Connection timed out")}
         except requests.exceptions.ConnectionError:
-            return {'status': None, 'code': 502, 'detail': _("Error in connection with the payment gateway")}
+            return {
+                "status": None,
+                "code": 502,
+                "detail": _("Error in connection with the payment gateway"),
+            }
         except Exception:
-            return {'status': None, 'code': 500, 'detail': _("An unknown error occurred")}
+            return {"status": None, "code": 500, "detail": _("An unknown error occurred")}
 
     @classmethod
     def verify(cls, authority, amount):
-
-        data = {
-            "merchant_id": cls.MERCHANT_ID,
-            "amount": amount,
-            "authority": authority
-        }
+        data = {"merchant_id": cls.MERCHANT_ID, "amount": amount, "authority": authority}
         data_json = json.dumps(data)
-        headers = {
-            'content-type': 'application/json',
-            'content-length': str(len(data_json))
-        }
+        headers = {"content-type": "application/json", "content-length": str(len(data_json))}
         try:
             response = requests.post(ZP_API_VERIFY, data=data_json, headers=headers, timeout=10)
             json_response = response.json()
             if json_response.get("data"):
                 code = json_response["data"]["code"]
                 if code == 100:
-                    return {'status': True, 'code': code, 'ref_id': json_response["data"]["ref_id"]}
+                    return {"status": True, "code": code, "ref_id": json_response["data"]["ref_id"]}
                 else:
-                    return {'status': False, 'code': code}
+                    return {"status": False, "code": code}
             else:
                 error_code = json_response.get("errors", {}).get("code", None)
-                return {'status': False, 'code': error_code}
+                return {"status": False, "code": error_code}
         except requests.exceptions.Timeout:
-            return {'status': None, 'code': 502, 'detail': _("Connection timed out")}
+            return {"status": None, "code": 502, "detail": _("Connection timed out")}
         except requests.exceptions.ConnectionError:
-            return {'status': None, 'code': 502, 'detail': _("Error in connection with the payment gateway")}
+            return {
+                "status": None,
+                "code": 502,
+                "detail": _("Error in connection with the payment gateway"),
+            }
         except Exception:
-            return {'status': None, 'code': 500, 'detail': _("An unknown error occurred")}
+            return {"status": None, "code": 500, "detail": _("An unknown error occurred")}

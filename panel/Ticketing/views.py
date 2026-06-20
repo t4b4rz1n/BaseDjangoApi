@@ -1,67 +1,77 @@
-from django.utils import timezone
-from rest_framework import viewsets, generics, status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
-from django_filters.rest_framework import DjangoFilterBackend
-from django.shortcuts import get_object_or_404
-from panel.Ticketing.models import Ticket, Message
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
+
 from common.utils.mixins import FieldFilterOverviewMixin
+from panel.Ticketing.models import Message, Ticket
+
+from .filters import MessageFilter, StaffTicketFilter
 from .serializers import (
-    TicketListSerializer, TicketDetailSerializer, MessageSerializer, 
-    MessageCreateSerializer, StaffTicketUpdateSerializer
+    MessageCreateSerializer,
+    MessageSerializer,
+    StaffTicketUpdateSerializer,
+    TicketDetailSerializer,
+    TicketListSerializer,
 )
-from .filters import StaffTicketFilter, MessageFilter
+
 
 class StaffTicketViewSet(FieldFilterOverviewMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = StaffTicketFilter
-    search_fields = ['title', 'messages__text', 'user__username', 'user__email', 'id']
-    lookup_field = 'id'
-    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
+    search_fields = ["title", "messages__text", "user__username", "user__email", "id"]
+    lookup_field = "id"
+    http_method_names = ["get", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        return Ticket.objects.all().select_related('ticket_type', 'user')
+        return Ticket.objects.all().select_related("ticket_type", "user")
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return TicketListSerializer
-        if self.action in ['update', 'partial_update']:
-            return StaffTicketUpdateSerializer 
+        if self.action in ["update", "partial_update"]:
+            return StaffTicketUpdateSerializer
         return TicketDetailSerializer
+
 
 class StaffMessageListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_class = MessageFilter
-    search_fields = ['text']
+    search_fields = ["text"]
 
     def get_ticket(self):
-        ticket_id = self.kwargs.get('id')
+        ticket_id = self.kwargs.get("id")
         ticket = get_object_or_404(Ticket, id=ticket_id)
         return ticket
 
     def get_queryset(self):
         ticket = self.get_ticket()
-        return Message.objects.filter(ticket=ticket).select_related('sender').prefetch_related('attachments')
+        return (
+            Message.objects.filter(ticket=ticket)
+            .select_related("sender")
+            .prefetch_related("attachments")
+        )
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return MessageCreateSerializer 
+        if self.request.method == "POST":
+            return MessageCreateSerializer
         return MessageSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['ticket'] = self.get_ticket()
-        context['request'] = self.request
+        context["ticket"] = self.get_ticket()
+        context["request"] = self.request
         return context
 
     def list(self, request, *args, **kwargs):
         ticket = self.get_ticket()
         queryset = self.get_queryset()
-        
+
         queryset.filter(sender=ticket.user, seen=False).update(seen=True)
 
         page = self.paginate_queryset(queryset)
@@ -72,10 +82,11 @@ class StaffMessageListCreateAPIView(generics.ListCreateAPIView):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+
 class StaffMessageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = MessageSerializer
-    lookup_field = 'id'
+    lookup_field = "id"
 
     def get_queryset(self):
         return Message.objects.all()

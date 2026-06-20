@@ -1,6 +1,7 @@
 import requests
 from django.conf import settings
 
+
 class NowPaymentsClient:
     API_KEY = settings.NOWPAYMENTS_API_KEY
     if settings.SANDBOX:
@@ -10,15 +11,11 @@ class NowPaymentsClient:
         API_KEY = settings.NOWPAYMENTS_API_KEY
         BASE_URL = "https://api.nowpayments.io/v1"
 
-
     @classmethod
     def pay(cls, amount, description, order_id, price_currency="usd", pay_currency="btc"):
         url = f"{cls.BASE_URL}/invoice"
         ipn_callback_url = settings.CALLBACK_URL
-        headers = {
-            "x-api-key": cls.API_KEY,
-            "Content-Type": "application/json"
-        }
+        headers = {"x-api-key": cls.API_KEY, "Content-Type": "application/json"}
         payload = {
             "price_amount": amount,
             "price_currency": price_currency,
@@ -36,7 +33,7 @@ class NowPaymentsClient:
             return {
                 "status": True,
                 "url": invoice_data["invoice_url"],
-                "payment_id": invoice_data["id"]
+                "payment_id": invoice_data["id"],
             }
         else:
             return {"status": False, "error": invoice_data}

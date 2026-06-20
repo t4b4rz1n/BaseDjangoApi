@@ -1,7 +1,8 @@
-from .Ticketing.models import Ticket, Message, Attachment, TicketType
-from .Notification.models import Notification
-from .Feedback.models import Feedback
 from django.contrib import admin
+
+from .Feedback.models import Feedback
+from .Notification.models import Notification
+from .Ticketing.models import Attachment, Message, Ticket, TicketType
 
 admin.site.register(TicketType)
 admin.site.register(Ticket)

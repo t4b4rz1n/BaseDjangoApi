@@ -1,6 +1,8 @@
-from rest_framework import serializers
-from billing.models import DiscountCode
 from django.utils import timezone
+from rest_framework import serializers
+
+from billing.models import DiscountCode
+
 
 class StaffDiscountCodeSerializer(serializers.ModelSerializer):
     is_expired = serializers.SerializerMethodField()
@@ -9,19 +11,19 @@ class StaffDiscountCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscountCode
         fields = [
-            'id', 
-            'code', 
-            'description', 
-            'percent', 
-            'max_usage', 
-            'current_usage', 
-            'expiration_date', 
-            'is_active',
-            'created_at',
-            'is_expired',
-            'is_fully_used'
+            "id",
+            "code",
+            "description",
+            "percent",
+            "max_usage",
+            "current_usage",
+            "expiration_date",
+            "is_active",
+            "created_at",
+            "is_expired",
+            "is_fully_used",
         ]
-        read_only_fields = ['id', 'current_usage', 'created_at']
+        read_only_fields = ["id", "current_usage", "created_at"]
 
     def get_is_expired(self, obj):
         if obj.expiration_date and obj.expiration_date < timezone.now():
@@ -35,7 +37,9 @@ class StaffDiscountCodeSerializer(serializers.ModelSerializer):
         return value.upper().strip()
 
     def validate(self, data):
-        expire = data.get('expiration_date')
+        expire = data.get("expiration_date")
         if expire and expire < timezone.now():
-             raise serializers.ValidationError({"expiration_date": "Expiration date cannot be in the past."})
+            raise serializers.ValidationError(
+                {"expiration_date": "Expiration date cannot be in the past."}
+            )
         return data

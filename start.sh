@@ -663,7 +663,7 @@ apply_finish() {
         else
             box_line "  source venv/bin/activate"
         fi
-        box_line "  pip install -r requirements.txt"
+        box_line "  pip install -r requirements/local.txt"
         box_line "  python manage.py migrate"
         box_line "  python manage.py createsuperuser"
         box_line "  python manage.py runserver"

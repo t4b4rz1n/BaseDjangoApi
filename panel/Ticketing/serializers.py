@@ -1,31 +1,40 @@
 import os
+
 from rest_framework import serializers
-from panel.Ticketing.models import Ticket, TicketType, Message, Attachment
+
+from panel.Ticketing.models import Attachment, Message, Ticket, TicketType
+
 
 class AttachmentSerializer(serializers.ModelSerializer):
     file_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Attachment
-        fields = ['id', 'file', 'created_at', 'file_type']
-        ref_name = 'attachment_panel'
+        fields = ["id", "file", "created_at", "file_type"]
+        ref_name = "attachment_panel"
 
     def get_file_type(self, obj):
         if not obj.file:
             return "unknown"
         name, extension = os.path.splitext(obj.file.name)
         ext = extension.lower()
-        IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
-        VIDEO_EXTS = ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv']
-        AUDIO_EXTS = ['.mp3', '.wav', '.ogg', '.m4a']
-        DOC_EXTS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv']
-        ARCHIVE_EXTS = ['.zip', '.rar', '.7z', '.tar', '.gz']
-        if ext in IMAGE_EXTS: return "image"
-        if ext in VIDEO_EXTS: return "video"
-        if ext in AUDIO_EXTS: return "audio"
-        if ext in DOC_EXTS: return "document"
-        if ext in ARCHIVE_EXTS: return "archive"
+        IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"]
+        VIDEO_EXTS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv"]
+        AUDIO_EXTS = [".mp3", ".wav", ".ogg", ".m4a"]
+        DOC_EXTS = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv"]
+        ARCHIVE_EXTS = [".zip", ".rar", ".7z", ".tar", ".gz"]
+        if ext in IMAGE_EXTS:
+            return "image"
+        if ext in VIDEO_EXTS:
+            return "video"
+        if ext in AUDIO_EXTS:
+            return "audio"
+        if ext in DOC_EXTS:
+            return "document"
+        if ext in ARCHIVE_EXTS:
+            return "archive"
         return "file"
+
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = serializers.StringRelatedField(read_only=True)
@@ -33,59 +42,70 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'text', 'seen', 'created_at', 'updated_at', 'attachments']
-        read_only_fields = ['id', 'sender', 'seen', 'created_at', 'updated_at', 'attachments']
-        ref_name = 'messages_panel'
+        fields = ["id", "sender", "text", "seen", "created_at", "updated_at", "attachments"]
+        read_only_fields = ["id", "sender", "seen", "created_at", "updated_at", "attachments"]
+        ref_name = "messages_panel"
+
 
 class MessageCreateSerializer(serializers.ModelSerializer):
     attachments = serializers.ListField(
-        child=serializers.FileField(allow_empty_file=False),
-        write_only=True,
-        required=False
+        child=serializers.FileField(allow_empty_file=False), write_only=True, required=False
     )
 
     class Meta:
         model = Message
-        fields = ['id', 'text', 'attachments']
-        ref_name = 'message_panel'
-    
+        fields = ["id", "text", "attachments"]
+        ref_name = "message_panel"
+
     def validate_attachments(self, files):
         if len(files) > 5:
             raise serializers.ValidationError("You can upload a maximum of 5 files.")
         for file in files:
             if file.size > 5 * 1024 * 1024:
-                raise serializers.ValidationError(f"File size exceeds the limit of 5MB.")
+                raise serializers.ValidationError("File size exceeds the limit of 5MB.")
         return files
 
     def create(self, validated_data):
-        attachments_data = validated_data.pop('attachments', [])
-        ticket = self.context['ticket']
-        sender = self.context['request'].user
-        
+        attachments_data = validated_data.pop("attachments", [])
+        ticket = self.context["ticket"]
+        sender = self.context["request"].user
+
         if ticket.status == Ticket.Status.CLOSED:
             raise serializers.ValidationError("Cannot add messages to a closed ticket.")
 
         message = Message.objects.create(ticket=ticket, sender=sender, **validated_data)
-        
+
         for file_data in attachments_data:
             Attachment.objects.create(message=message, file=file_data)
-            
+
         return message
+
 
 class TicketListSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
     ticket_type = serializers.StringRelatedField()
-    
+
     class Meta:
         model = Ticket
-        fields = ['id', 'title', 'user', 'ticket_type', 'priority', 'status', 'created_at', 'updated_at']
-        ref_name = 'tickets_panel'
+        fields = [
+            "id",
+            "title",
+            "user",
+            "ticket_type",
+            "priority",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
+        ref_name = "tickets_panel"
+
 
 class TicketTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TicketType
-        fields = ['id', 'name']
-        ref_name = 'ticket_type_panel'
+        fields = ["id", "name"]
+        ref_name = "ticket_type_panel"
+
 
 class TicketDetailSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
@@ -93,21 +113,31 @@ class TicketDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ticket
-        fields = ['id', 'title', 'user', 'ticket_type', 'priority', 'status', 'created_at', 'updated_at', 'closed_at']
-        ref_name = 'ticket_panel'
+        fields = [
+            "id",
+            "title",
+            "user",
+            "ticket_type",
+            "priority",
+            "status",
+            "created_at",
+            "updated_at",
+            "closed_at",
+        ]
+        ref_name = "ticket_panel"
+
 
 class StaffTicketUpdateSerializer(serializers.ModelSerializer):
     status = serializers.ChoiceField(choices=Ticket.Status.choices, required=False)
     priority = serializers.ChoiceField(choices=Ticket.Priority.choices, required=False)
     ticket_type = serializers.PrimaryKeyRelatedField(
-        queryset=TicketType.objects.all(), 
-        required=False
+        queryset=TicketType.objects.all(), required=False
     )
 
     class Meta:
         model = Ticket
-        fields = ['title', 'status', 'priority', 'ticket_type']
-        ref_name = 'staff_ticket_update_panel'
+        fields = ["title", "status", "priority", "ticket_type"]
+        ref_name = "staff_ticket_update_panel"
 
     def validate_title(self, value):
         if not value or not value.strip():

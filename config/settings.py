@@ -1,20 +1,27 @@
-import os
-from pathlib import Path
-from dotenv import load_dotenv
 from datetime import timedelta
+from pathlib import Path
+
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- Load .env file if it exists ---
-env_path = BASE_DIR / ".env"
-if env_path.exists():
-    load_dotenv(env_path)
+env = environ.Env(
+    DEBUG=(bool, True),
+    USE_SQLITE=(bool, False),
+    USE_MINIO=(bool, False),
+    ENABLE_FIELD_FILTER_PAGINATION=(bool, False),
+    SANDBOX=(bool, True),
+    ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
+    ALLOWED_CORS=(list, ["http://localhost:3000"]),
+    CSRF_TRUSTED_ORIGINS=(list, ["http://localhost"]),
+)
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-CHANGE-ME-IN-PRODUCTION")
-DEBUG = os.environ.get("DEBUG", "True") == "True"
-ENABLE_FIELD_FILTER_PAGINATION = os.environ.get("ENABLE_FIELD_FILTER_PAGINATION", "False")
-ALLOWED_HOSTS_str = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
-ALLOWED_HOSTS = ALLOWED_HOSTS_str.split(",")
+environ.Env.read_env(BASE_DIR / ".env")
+
+SECRET_KEY = env("SECRET_KEY", default="django-insecure-CHANGE-ME-IN-PRODUCTION")
+DEBUG = env("DEBUG")
+ENABLE_FIELD_FILTER_PAGINATION = env("ENABLE_FIELD_FILTER_PAGINATION")
+ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
 # --- Application Definitions ---
 DJANGO_APPS = [
@@ -33,7 +40,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "storages",
     "django_filters",
-    "drf_yasg"
+    "drf_yasg",
 ]
 
 LOCAL_APPS = [
@@ -66,7 +73,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / 'templates'],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -84,7 +91,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 AUTH_USER_MODEL = "accounts.User"
 
 # --- Database Configuration ---
-USE_SQLITE = os.environ.get("USE_SQLITE", "False") == "True"
+USE_SQLITE = env("USE_SQLITE")
 
 if USE_SQLITE:
     DATABASES = {
@@ -97,11 +104,11 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get('DB_NAME', 'base_project_db'),
-            "USER": os.environ.get("DB_USER", 'base_project_user'),
-            "PASSWORD": os.environ.get("DB_PASSWORD", 'strong_password_123'),
-            "HOST": os.environ.get("DB_HOST", 'localhost'),
-            "PORT": os.environ.get("DB_PORT", '5432'),
+            "NAME": env("DB_NAME", default="base_project_db"),
+            "USER": env("DB_USER", default="base_project_user"),
+            "PASSWORD": env("DB_PASSWORD", default="strong_password_123"),
+            "HOST": env("DB_HOST", default="localhost"),
+            "PORT": env("DB_PORT", default="5432"),
         }
     }
 
@@ -120,10 +127,8 @@ USE_I18N = True
 USE_TZ = True
 
 # --- CORS (Cross-Origin Resource Sharing) ---
-CORS_ALLOWED_ORIGINS_str = os.environ.get("ALLOWED_CORS", "http://localhost:3000")
-CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_str.split(",")
-CSRF_TRUSTED_ORIGINS_str = os.environ.get("CSRF_TRUSTED_ORIGINS", "http://localhost")
-CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS_str.split(",")
+CORS_ALLOWED_ORIGINS = env("ALLOWED_CORS")
+CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
 # --- Static and Media Files (with MinIO/S3) ---
 STATIC_URL = "/static/"
@@ -132,21 +137,21 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "mediafiles"
 
 # MinIO (S3) Storage Settings
-USE_MINIO = os.environ.get("USE_MINIO", "False") == "True"
+USE_MINIO = env("USE_MINIO")
 
 if USE_MINIO:
-    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
-    AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL")
-    AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN")
+    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default=None)
+    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default=None)
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default=None)
+    AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default=None)
+    AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN", default=None)
     AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
     AWS_S3_FILE_OVERWRITE = False
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_QUERYSTRING_AUTH = False 
-    AWS_S3_SIGNATURE_VERSION = 's3v4'
-    AWS_S3_ADDRESSING_STYLE = 'path'
-    AWS_S3_REGION_NAME = 'us-east-1'
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_S3_ADDRESSING_STYLE = "path"
+    AWS_S3_REGION_NAME = "us-east-1"
 
     STORAGES = {
         "default": {
@@ -156,9 +161,9 @@ if USE_MINIO:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
-    
+
     # Construct the media URL from the custom domain
-    protocol = os.environ.get('AWS_S3_URL_PROTOCOL', 'http:')
+    protocol = env("AWS_S3_URL_PROTOCOL", default="http:")
     if AWS_S3_CUSTOM_DOMAIN:
         MEDIA_URL = f"{protocol}//{AWS_S3_CUSTOM_DOMAIN}/"
     else:
@@ -174,37 +179,37 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.BasicAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": (
         "config.renderers.ApiRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter',
-        'rest_framework.filters.OrderingFilter',
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
     ),
     "DEFAULT_PAGINATION_CLASS": "config.pagination.DefaultPagination",
     "PAGE_SIZE": 10,
+    "EXCEPTION_HANDLER": "config.exception_handler.custom_exception_handler",
 }
 
 # --- SimpleJWT Settings ---
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.environ.get("JWT_ACCESS_LIFETIME_MINUTES", "60"))),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get("JWT_REFRESH_LIFETIME_DAYS", "7"))),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("JWT_ACCESS_LIFETIME_MINUTES", default=60)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_LIFETIME_DAYS", default=7)),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
 
 # --- Payment Settings ---
-NOWPAYMENTS_API_KEY = os.environ.get("NOWPAYMENTS_API_KEY")
-NOWPAYMENTS_SANDBOX_API_KEY = os.environ.get("NOWPAYMENTS_SANDBOX_API_KEY")
+SANDBOX = env("SANDBOX")
+NOWPAYMENTS_API_KEY = env("NOWPAYMENTS_API_KEY", default=None)
+NOWPAYMENTS_SANDBOX_API_KEY = env("NOWPAYMENTS_SANDBOX_API_KEY", default=None)
 
-ZARINPAL_MERCHANT_ID = os.environ.get("ZARINPAL_MERCHANT_ID")
-CALLBACK_URL = os.environ.get("CALLBACK_URL", "https://example.com/payment/verify/")
-CANCEL_URL = os.environ.get("CANCEL_URL", "https://example.com/payment/cancel/")
+ZARINPAL_MERCHANT_ID = env("ZARINPAL_MERCHANT_ID", default=None)
+CALLBACK_URL = env("CALLBACK_URL", default="https://example.com/payment/verify/")
+CANCEL_URL = env("CANCEL_URL", default="https://example.com/payment/cancel/")
 
 # --- Logging ---
 LOGS_DIR = BASE_DIR / "logs"
@@ -212,7 +217,6 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    
     "formatters": {
         "verbose": {
             "format": "{levelname} {asctime} [{module}:{lineno}] {message}",
@@ -223,7 +227,6 @@ LOGGING = {
             "style": "{",
         },
     },
-    
     "handlers": {
         "info_file": {
             "level": "INFO",
@@ -258,7 +261,6 @@ LOGGING = {
             "formatter": "simple",
         },
     },
-    
     "loggers": {
         "django": {
             "handlers": ["console", "info_file", "warning_file", "error_file"],
@@ -272,3 +274,7 @@ LOGGING = {
         },
     },
 }
+
+# --- Celery Settings ---
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
