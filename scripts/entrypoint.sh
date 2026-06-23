@@ -4,8 +4,6 @@ set -e
 echo "Running migrations..."
 python manage.py migrate
 
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
 
 echo "Creating superuser..."
 python manage.py shell -c "
@@ -25,4 +23,10 @@ else:
 "
 
 echo "Starting server..."
-python manage.py runserver 0.0.0.0:8000
+if [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ] || [ "$DEBUG" = "1" ]; then
+    echo "Running in development mode (runserver)..."
+    python manage.py runserver 0.0.0.0:8000
+else
+    echo "Running in production mode (gunicorn)..."
+    exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+fi

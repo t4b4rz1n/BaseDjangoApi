@@ -35,6 +35,8 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
 
 COPY . .
 
+RUN python manage.py collectstatic --noinput
+
 RUN chown -R appuser:appuser /app
 
 USER appuser
