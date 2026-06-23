@@ -517,7 +517,7 @@ apply_generate_env() {
 # ==============================================================================
 
 # --- Django ---
-SECRET_KEY=${SECRET_KEY}
+SECRET_KEY='${SECRET_KEY}'
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 CSRF_TRUSTED_ORIGINS=http://localhost,http://127.0.0.1
@@ -527,19 +527,19 @@ ALLOWED_CORS=http://localhost:3000,http://127.0.0.1:3000
 USE_SQLITE=${use_sqlite}
 DB_NAME=${DB_NAME:-${PROJECT_SLUG}_db}
 DB_USER=${DB_USER:-${PROJECT_SLUG}_user}
-DB_PASSWORD=${DB_PASSWORD:-strong_password_123}
+DB_PASSWORD='${DB_PASSWORD:-strong_password_123}'
 DB_HOST=${db_host_val}
 DB_PORT=${DB_PORT:-5432}
 
 # --- Superuser ---
 SUPERUSER_USERNAME=${ADMIN_USERNAME}
 SUPERUSER_EMAIL=${ADMIN_EMAIL}
-SUPERUSER_PASSWORD=${ADMIN_PASSWORD}
+SUPERUSER_PASSWORD='${ADMIN_PASSWORD}'
 
 # --- MinIO / S3 ---
 USE_MINIO=${use_minio_val}
 AWS_ACCESS_KEY_ID=minio_admin
-AWS_SECRET_ACCESS_KEY=minio_password
+AWS_SECRET_ACCESS_KEY='minio_password'
 AWS_STORAGE_BUCKET_NAME=${dash}-media
 AWS_S3_ENDPOINT_URL=http://minio:9000
 AWS_S3_MINAIO_ENDPOINT_URL=http://localhost:9000
