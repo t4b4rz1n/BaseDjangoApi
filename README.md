@@ -34,9 +34,31 @@ A production-ready Django REST Framework template for building backend APIs. Inc
 └── .env.example        # Environment variables template
 ```
 
+
 ## 🚀 Quick Start
 
-### Option 1: Interactive Setup (Recommended)
+### Prerequisites
+- Docker & Docker Compose
+- Make (optional, for using Makefile commands)
+
+### ⚠️ Windows Users — Important!
+
+If you're on Windows, Git may convert `scripts/entrypoint.sh` to CRLF line endings, which will cause errors in the Docker container.
+
+**Fix this before running the project:**
+
+```bash
+Option 1: Convert the file manually (VS Code)
+Open scripts/entrypoint.sh → bottom-right click "CRLF" → select "LF" → Save
+
+Option 2: Use Git Bash
+dos2unix scripts/entrypoint.sh
+
+Option 3: Use Notepad++
+Edit → EOL Conversion → Unix (LF) → Save
+
+
+Option 1: Interactive Setup (Recommended)
 
 ```bash
 bash start.sh
