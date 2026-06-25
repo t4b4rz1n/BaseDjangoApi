@@ -104,8 +104,8 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": env("DB_NAME", default="base_project_db"),
-            "USER": env("DB_USER", default="base_project_user"),
+            "NAME": env("DB_NAME", default="madar_db"),
+            "USER": env("DB_USER", default="madar_user"),
             "PASSWORD": env("DB_PASSWORD", default="strong_password_123"),
             "HOST": env("DB_HOST", default="localhost"),
             "PORT": env("DB_PORT", default="5432"),
@@ -175,9 +175,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # --- Django REST Framework (DRF) & JWT Settings ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication", 
+        "rest_framework.authentication.SessionAuthentication", 
         "rest_framework.authentication.BasicAuthentication",
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": (
