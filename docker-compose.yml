@@ -19,9 +19,19 @@ services:
     restart: unless-stopped
     networks:
       - base-network
-    profiles:
-      - postgres
-
+  redis:
+    image: redis:7-alpine
+    container_name: base_project_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - base-network
   minio:
     image: minio/minio:latest
     container_name: base_project_minio
@@ -60,22 +70,6 @@ services:
     profiles:
       - minio
 
-  redis:
-    image: redis:7-alpine
-    container_name: base_project_redis
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-    networks:
-      - base-network
-    profiles:
-      - redis
-
   backend:
     build:
       context: .
@@ -91,14 +85,11 @@ services:
     depends_on:
       db_postgres:
         condition: service_healthy
-        required: false
       redis:
-        condition: service_healthy
-        required: false
+        condition: service_healthy 
     restart: unless-stopped
     networks:
       - base-network
-
   celery_worker:
     build:
       context: .
@@ -113,15 +104,16 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
-      db_postgres:
-        condition: service_healthy
       redis:
+        condition: service_healthy
+      db_postgres:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - base-network
     profiles:
-      - celery
+      - celery  
 
 networks:
   base-network:
+    driver: bridge

@@ -37,10 +37,9 @@ A production-ready Django REST Framework template for building backend APIs. Inc
 ## 🚀 Quick Start
 
 ### Option 1: Interactive Setup (Recommended)
-
-```bash
-bash start.sh
-```
+### Prerequisites
+- Docker
+- Make (optional, for using Makefile commands)
 
 The setup wizard will guide you through:
 1. **Project naming** — rename all references from `base_project`
