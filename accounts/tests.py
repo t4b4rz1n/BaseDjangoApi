@@ -20,7 +20,7 @@ class UserProfileUpdateViewTestCase(APITestCase):
 
     def test_unauthenticated_user_cannot_update_profile(self):
         response = self.client.patch(self.url, {"first_name": "NewName"})
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_authenticated_user_can_update_profile_fields(self):
         self.client.force_authenticate(user=self.user)

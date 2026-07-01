@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -14,6 +15,9 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     ALLOWED_CORS=(list, ["http://localhost:3000"]),
     CSRF_TRUSTED_ORIGINS=(list, ["http://localhost"]),
+    SECURE_SSL_REDIRECT=(bool, False),
+    SESSION_COOKIE_SECURE=(bool, False),
+    CSRF_COOKIE_SECURE=(bool, False),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -22,6 +26,9 @@ SECRET_KEY = env("SECRET_KEY", default="django-insecure-CHANGE-ME-IN-PRODUCTION"
 DEBUG = env("DEBUG")
 ENABLE_FIELD_FILTER_PAGINATION = env("ENABLE_FIELD_FILTER_PAGINATION")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+
+if not DEBUG and SECRET_KEY == "django-insecure-CHANGE-ME-IN-PRODUCTION":
+    raise ImproperlyConfigured("Set a production SECRET_KEY before running with DEBUG=False.")
 
 # --- Application Definitions ---
 DJANGO_APPS = [
@@ -104,8 +111,8 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": env("DB_NAME", default="base_project_db"),
-            "USER": env("DB_USER", default="base_project_user"),
+            "NAME": env("DB_NAME", default="vafa_db"),
+            "USER": env("DB_USER", default="vafa_user"),
             "PASSWORD": env("DB_PASSWORD", default="strong_password_123"),
             "HOST": env("DB_HOST", default="localhost"),
             "PORT": env("DB_PORT", default="5432"),
@@ -172,13 +179,16 @@ if USE_MINIO:
 # --- Default Primary Key Type ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+API_AUTHENTICATION_CLASSES = [
+    "rest_framework_simplejwt.authentication.JWTAuthentication",
+]
+
+if DEBUG:
+    API_AUTHENTICATION_CLASSES.append("rest_framework.authentication.SessionAuthentication")
+
 # --- Django REST Framework (DRF) & JWT Settings ---
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": tuple(API_AUTHENTICATION_CLASSES),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": (
         "config.renderers.ApiRenderer",
@@ -200,6 +210,18 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_LIFETIME_DAYS", default=7)),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Use: Bearer <access_token>",
+        }
+    },
 }
 
 # --- Payment Settings ---
@@ -278,3 +300,11 @@ LOGGING = {
 # --- Celery Settings ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
+
+# --- Production Security ---
+SECURE_SSL_REDIRECT = env("SECURE_SSL_REDIRECT")
+SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE")
+CSRF_COOKIE_SECURE = env("CSRF_COOKIE_SECURE")
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
+X_FRAME_OPTIONS = "DENY"
