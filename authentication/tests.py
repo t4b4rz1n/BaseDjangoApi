@@ -121,3 +121,15 @@ class AuthenticationTestCase(APITestCase):
 
         # Verify refresh token is blacklisted in database
         self.assertTrue(BlacklistedToken.objects.exists())
+
+    def test_user_logout_requires_refresh_token(self):
+        user = User.objects.create_user(
+            username=self.user_data["username"],
+            email=self.user_data["email"],
+            password=self.user_data["password"],
+        )
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post(self.logout_url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("refresh", response.json()["errors"])

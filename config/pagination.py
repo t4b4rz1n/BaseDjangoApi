@@ -11,14 +11,15 @@ class DefaultPagination(PageNumberPagination):
     def paginate_queryset(self, queryset, request, view=None):
         try:
             return super().paginate_queryset(queryset, request, view)
-        except NotFound:
+        except NotFound as exc:
             self.request = request
             page_number = request.query_params.get(self.page_query_param, 1)
-            if int(page_number) > 1:
-                url = request.build_absolute_uri()
-                url = url.replace(
-                    f"{self.page_query_param}={page_number}", f"{self.page_query_param}=1"
-                )
+            try:
+                requested_page = int(page_number)
+            except (TypeError, ValueError):
+                raise exc from None
+
+            if requested_page > 1:
                 self.page = self.django_paginator_class(queryset, self.page_size).page(1)
                 return list(self.page)
             raise
